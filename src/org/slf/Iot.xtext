@@ -1,0 +1,78 @@
+grammar org.slf.Iot with org.eclipse.xtext.common.Terminals
+
+generate iot "http://www.slf.org/Iot"
+
+Model:
+	dispositivos+=Dispositivo*;
+
+Dispositivo:
+	'dispositivo' name=ID ('extends' superType=[Dispositivo])? '{'
+	etiquetas+=Etiqueta*
+	estados+=Estado*
+	eventos+=Evento*
+	transiciones+=Transicion*
+	'}';
+
+Etiqueta:
+	typeName=('etiqueta') name=ID ('=' value=STRING)?;
+
+Evento:
+	typeName=('evento') name=ID;
+
+Estado:
+	'estado' name=ID '{'
+	elementos+=AbstractElement*
+	'}';
+
+Transicion:
+	evento=[Evento] '=>' estado=[Estado];
+
+AbstractElement:
+	Variable | Expression | IfStatement;
+	
+IfStatement:
+	'if' '(' expression=Expression ')' thenBlock=IfBlock
+	(=>'else' elseBlock=IfBlock)?;
+
+IfBlock:
+	elementos += AbstractElement
+	| '{' elementos += AbstractElement+ '}';
+
+Variable:
+	name=ID '=' expression=Expression;
+
+Expression:
+	Or;
+
+Or returns Expression:
+	And ({Or.left=current} "||" right=And)*;
+
+And returns Expression:
+	Equality ({And.left=current} "&&" right=Equality)*;
+
+Equality returns Expression:
+	Comparison ({Equality.left=current} op=("==" | "!=")
+	right=Comparison)*;
+
+Comparison returns Expression:
+	PlusOrMinus ({Comparison.left=current} op=(">=" | "<=" | ">" | "<")
+	right=PlusOrMinus)*;
+
+PlusOrMinus returns Expression:
+	MulOrDiv (({Plus.left=current} '+' | {Minus.left=current} '-')
+	right=MulOrDiv)*;
+
+MulOrDiv returns Expression:
+	Primary ({MulOrDiv.left=current} op=('*' | '/')
+	right=Primary)*;
+
+Primary returns Expression:
+	'(' Expression ')' |
+	{Not} "!" expression=Primary |
+	Atomic;
+
+Atomic returns Expression:
+	{IntConstant} value=INT |
+	{StringConstant} value=STRING |
+	{BoolConstant} value=('true' | 'false') |
+	{VariableRef} variable=[Variable];
