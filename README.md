@@ -1,5 +1,3 @@
-# IoTSeminarioLengFormales
-
 # Internet Of Things
 
 ### Autor/res
